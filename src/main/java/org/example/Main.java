@@ -37,8 +37,14 @@ public class Main {
         try {
             driver.get("https://pracuj.pl/");
             WebElement popup = driver.findElement(new By.ByClassName("popup_p1c6glb0"));
-            popup.click();
             Thread.sleep(randomNum());
+            popup.click();
+            WebElement submitButtonCookie = driver.findElement(By.cssSelector("[data-test='button-submitCookie']"));
+            Thread.sleep(randomNum());
+            submitButtonCookie.click();
+            driver.get("https://it.pracuj.pl/praca/junior%20software%20engineer;kw?itth=84%2C34");
+            popup.click();
+
 //            cookie.click();
 
         } catch (InterruptedException e){
