@@ -4,6 +4,10 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import java.util.Random;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class Main {
 
@@ -36,13 +40,16 @@ public class Main {
         }
         try {
             driver.get("https://pracuj.pl/");
-            WebElement popup = driver.findElement(new By.ByClassName("popup_p1c6glb0"));
             Thread.sleep(randomNum());
-            popup.click();
             WebElement submitButtonCookie = driver.findElement(By.cssSelector("[data-test='button-submitCookie']"));
             Thread.sleep(randomNum());
             submitButtonCookie.click();
+//
+//            popup.click();
+
             driver.get("https://it.pracuj.pl/praca/junior%20software%20engineer;kw?itth=84%2C34");
+            Thread.sleep(randomNum());
+            WebElement popup = driver.findElement(new By.ByClassName("popup_p1c6glb0"));
             popup.click();
 
 //            cookie.click();
