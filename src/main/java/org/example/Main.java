@@ -12,7 +12,54 @@ import java.util.concurrent.TimeUnit;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
+
+//import com.mongodb.ConnectionString;
+//import com.mongodb.MongoClientSettings;
+//import com.mongodb.MongoException;
+//import com.mongodb.ServerApi;
+//import com.mongodb.ServerApiVersion;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
+//import java.util.Arrays;
+import java.util.Date;
+//import org.bson.types.ObjectId;
+
 public class Main {
+
+    public static void connectTest() {
+        MongoClient mongoClient = MongoClients.create("mongodb+srv://Norbert:Zubrzak@joboffer.hifyopr.mongodb.net/?retryWrites=true&w=majority&appName=JobOffer");
+        MongoDatabase database = mongoClient.getDatabase("JobOffer");
+        MongoCollection<Document> collection = database.getCollection("Links");
+
+        try{
+            Document ping = new Document("ping", 1);
+            database.runCommand(ping);
+            System.out.println("Połączono z bazą danych");
+        } catch (Exception e) {
+            System.out.println("Nie połączono z bazą danych: " + e.getMessage());
+        }
+
+//        Document ogloszenie1 = createOgloszenieDocument("Programista Java", true, new Date(), "Warszawa, ul. Przykładowa 123", "Umowa o pracę", "Pełny etat", "http://przykladowy.link/do/ogloszenia");
+//        Document ogloszenie2 = createOgloszenieDocument("Specjalista ds. SEO", false, null, "Kraków, ul. Kolejowa 47", "B2B", "Część etatu", "http://przykladowy.link/do/ogloszenia2");
+//        Document ogloszenie3 = createOgloszenieDocument("Project Manager", true, new Date(), "Gdańsk, ul. Morska 88", "Kontrakt", "Pełny etat", "http://przykladowy.link/do/ogloszenia3");
+//
+//        collection.insertMany(Arrays.asList(ogloszenie1, ogloszenie2, ogloszenie3));
+
+        mongoClient.close();
+    }
+    private static Document createOgloszenieDocument(String tytulOgloszenia, boolean czyWyslanoCV, Date dataWyslaniaCV, String adres, String rodzajUmowy, String wymiarPracy, String linkDoOgloszenia) {
+        Document doc = new Document("tytulOgloszenia", tytulOgloszenia)
+                .append("czyWyslanoCV", czyWyslanoCV)
+                .append("dataWyslaniaCV", dataWyslaniaCV)
+                .append("adres", adres)
+                .append("rodzajUmowy", rodzajUmowy)
+                .append("wymiarPracy", wymiarPracy)
+                .append("linkDoOgloszenia", linkDoOgloszenia);
+        return doc;
+    }
 
     private static String EMAIL;
     private static String PASSWORD;
@@ -64,6 +111,8 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        connectTest();
+
         driver.manage().timeouts().implicitlyWait(1, TimeUnit.SECONDS);
 
         driver.get("https://login.pracuj.pl/");
@@ -112,15 +161,15 @@ public class Main {
         System.out.println("--------------------");
         System.out.println(offersLinks);
 
-        for (String offerLink : offersLinks){
-            driver.get(offerLink);
-            waitForAction();
-            cookies();
-            WebElement linkElement = driver.findElement(By.cssSelector("[data-test='anchor-apply']"));
-            String hrefValue = linkElement.getAttribute("href");
-            driver.get(hrefValue);
-            WebElement submitButton = driver.findElement(new By.ByClassName("b14qiyz3"));
-            submitButton.click();
-        }
+//        for (String offerLink : offersLinks){
+//            driver.get(offerLink);
+//            waitForAction();
+//            cookies();
+//            WebElement linkElement = driver.findElement(By.cssSelector("[data-test='anchor-apply']"));
+//            String hrefValue = linkElement.getAttribute("href");
+//            driver.get(hrefValue);
+//            WebElement submitButton = driver.findElement(new By.ByClassName("b14qiyz3"));
+//            submitButton.click();
+//        }
     }
 }
