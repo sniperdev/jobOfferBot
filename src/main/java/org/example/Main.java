@@ -4,6 +4,9 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.WindowType;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,12 +15,8 @@ import java.util.concurrent.TimeUnit;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
+import java.time.Duration;
 
-//import com.mongodb.ConnectionString;
-//import com.mongodb.MongoClientSettings;
-//import com.mongodb.MongoException;
-//import com.mongodb.ServerApi;
-//import com.mongodb.ServerApiVersion;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
@@ -26,6 +25,11 @@ import org.bson.Document;
 //import java.util.Arrays;
 import java.util.Date;
 //import org.bson.types.ObjectId;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Locale;
 
 public class Main {
 
@@ -44,16 +48,19 @@ public class Main {
 
 //        Document ogloszenie1 = createOgloszenieDocument("Programista Java", true, new Date(), "Warszawa, ul. Przykładowa 123", "Umowa o pracę", "Pełny etat", "http://przykladowy.link/do/ogloszenia");
 //        Document ogloszenie2 = createOgloszenieDocument("Specjalista ds. SEO", false, null, "Kraków, ul. Kolejowa 47", "B2B", "Część etatu", "http://przykladowy.link/do/ogloszenia2");
-//        Document ogloszenie3 = createOgloszenieDocument("Project Manager", true, new Date(), "Gdańsk, ul. Morska 88", "Kontrakt", "Pełny etat", "http://przykladowy.link/do/ogloszenia3");
+//        Document ogloszenie3 = createOgloszenieDocument("Project Manager", true, new Date(), new Date(12, kwi, 2024), "Gdańsk, ul. Morska 88", "Kontrakt", "Pełny etat", "http://przykladowy.link/do/ogloszenia3");
 //
 //        collection.insertMany(Arrays.asList(ogloszenie1, ogloszenie2, ogloszenie3));
+//        collection.insertOne(ogloszenie3);
 
-        mongoClient.close();
+//        mongoClient.close();
     }
-    private static Document createOgloszenieDocument(String tytulOgloszenia, boolean czyWyslanoCV, Date dataWyslaniaCV, String adres, String rodzajUmowy, String wymiarPracy, String linkDoOgloszenia) {
+    private static Document createOgloszenieDocument(String tytulOgloszenia, String nazwaFirmy, boolean czyWyslanoCV, Date dataWyslaniaCV, Date waznoscOgloszenia, String adres, String rodzajUmowy, String wymiarPracy, String linkDoOgloszenia) {
         Document doc = new Document("tytulOgloszenia", tytulOgloszenia)
+                .append("nazwaFirmy", nazwaFirmy)
                 .append("czyWyslanoCV", czyWyslanoCV)
                 .append("dataWyslaniaCV", dataWyslaniaCV)
+                .append("waznoscOgloszenia", waznoscOgloszenia)
                 .append("adres", adres)
                 .append("rodzajUmowy", rodzajUmowy)
                 .append("wymiarPracy", wymiarPracy)
@@ -70,7 +77,9 @@ public class Main {
             prop.load(fis);
 
             EMAIL = prop.getProperty("email");
+            System.out.println(EMAIL);
             PASSWORD = prop.getProperty("password");
+            System.out.println(PASSWORD);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -110,13 +119,79 @@ public class Main {
         }
     }
 
+    private static LocalDate parseDate(String dateString) {
+        // Definicja wzorców dat
+        DateTimeFormatter[] formatters = new DateTimeFormatter[]{
+                DateTimeFormatter.ofPattern("dd-MM-yyyy"), // DD-MM-RRRR
+                DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH), // 12 Apr 2024
+                DateTimeFormatter.ofPattern("d LLL yyyy", new Locale("pl", "PL")), // 12 kwi 2024
+                // Możesz dodać więcej formatów zgodnie z potrzebami
+        };
+
+        for (DateTimeFormatter formatter : formatters) {
+            try {
+                // Usuwanie prefixów "do: " i "until: "
+                String normalizedDate = dateString.replaceAll("^(do: |until: )", "").trim();
+                return LocalDate.parse(normalizedDate, formatter);
+            } catch (DateTimeParseException e) {
+                // Ignorowanie błędów i próbowanie kolejnych formatów
+            }
+        }
+
+        throw new DateTimeParseException("Nie udało się sparsować daty: " + dateString, dateString, 0);
+    }
+
+    private static void dateOfPage(String detailedlink){
+
+        driver.switchTo().newWindow(WindowType.TAB);
+        driver.get(detailedlink);
+        WebDriverWait wait = new WebDriverWait(driver,Duration.ofSeconds(10));
+        cookies();
+        waitForAction();
+//        wait.until(ExpectedConditions.visibilityOfElementLocated(By.className("offer-viewnqE8MW")));
+
+        String title = driver.findElement(By.className("offer-viewkHIhn3")).getText();
+        System.out.println(title);
+        WebElement element = driver.findElement(By.cssSelector("[data-test='text-employerName']"));
+        String fullText = element.getText();
+        String companyName = fullText.replace("O firmie", "").trim();
+        System.out.println(companyName);
+//        System.out.println(sendCV);
+//        System.out.println(cvSendingDate);
+        String expiryDate = driver.findElement(By.className("offer-viewDZ0got")).getText();
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy"); // Format wyjściowy
+        try {
+            LocalDate parsedDate = parseDate(expiryDate);
+            expiryDate = parsedDate.format(outputFormatter); // Formatowanie daty do wyjściowego formatu
+            System.out.println(expiryDate);
+        } catch (DateTimeParseException e) {
+            //System.out.println(e.getMessage());
+        }
+        String address = driver.findElement(By.cssSelector("[data-test='text-benefit']")).getText();
+        System.out.println(address);
+        String contractType = driver.findElement(By.cssSelector("[data-test='sections-benefit-work-modes-text']")).getText();
+        System.out.println(contractType);
+        String workingTime = driver.findElement(By.cssSelector("[data-test='sections-benefit-contracts-text']")).getText();
+        System.out.println(workingTime);
+        System.out.println(detailedlink);
+
+
+        driver.close();
+
+    }
+
     public static void main(String[] args) {
-        connectTest();
+        //connectTest();
 
         driver.manage().timeouts().implicitlyWait(1, TimeUnit.SECONDS);
 
         driver.get("https://login.pracuj.pl/");
         waitForAction();
+        //dateOfPage("https://www.pracuj.pl/praca/software-development-manager-warszawa,oferta,1003267369?sug=list_top_cr_bd_10_tname_202_tgroup_A&s=1f7c2c91&searchId=MTcxMjg3NDEyNTE4Ny44MjMy");
+//        String hrefValue = linkElement.getAttribute("href");
+//        waitForAction();
+
+
         WebElement email = driver.findElement(By.cssSelector("[data-test='input-email']"));
         WebElement emailInput = email.findElement(By.cssSelector("[data-test='input-email']"));
         emailInput.sendKeys(EMAIL);
